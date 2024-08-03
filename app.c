@@ -1,17 +1,20 @@
 #include <stdio.h>
 #include <stdbool.h>
-
+#include <string.h>
 
 #define SIZE 3
 #define MAX_MOVES 9
-
+#define MAX_NAME_LENGTH 50
 
 char board[SIZE][SIZE];
 char currentPlayer = 'X';
+char playerXName[MAX_NAME_LENGTH] = "Player X";
+char playerOName[MAX_NAME_LENGTH] = "Player O";
 int moveHistory[MAX_MOVES][2];
 int currentMoveIndex = -1;
 int totalMoves = 0;
-
+int playerXWins = 0;
+int playerOWins = 0;
 
 void initializeBoard() {
     for (int i = 0; i < SIZE; i++) {
@@ -21,25 +24,24 @@ void initializeBoard() {
     }
 }
 
-
 void displayBoard() {
     printf("\n");
+    printf("  1 2 3\n");
     for (int i = 0; i < SIZE; i++) {
+        printf("%d ", i + 1);
         for (int j = 0; j < SIZE; j++) {
-            printf(" %c ", board[i][j]);
+            printf("%c", board[i][j]);
             if (j < SIZE - 1) printf("|");
         }
         printf("\n");
-        if (i < SIZE - 1) printf("---|---|---\n");
+        if (i < SIZE - 1) printf("  -+-+-\n");
     }
     printf("\n");
 }
 
-
 void switchPlayer() {
     currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
 }
-
 
 bool makeMove(int row, int col) {
     if (row >= 0 && row < SIZE && col >= 0 && col < SIZE && board[row][col] == ' ') {
@@ -54,7 +56,6 @@ bool makeMove(int row, int col) {
     }
 }
 
-
 void undoMove() {
     if (currentMoveIndex >= 0) {
         int row = moveHistory[currentMoveIndex][0];
@@ -67,7 +68,6 @@ void undoMove() {
         printf("No moves to undo.\n");
     }
 }
-
 
 void redoMove() {
     if (currentMoveIndex + 1 < totalMoves) {
@@ -82,7 +82,6 @@ void redoMove() {
     }
 }
 
-
 bool checkWin() {
     for (int i = 0; i < SIZE; i++) {
         if (board[i][0] == currentPlayer && board[i][1] == currentPlayer && board[i][2] == currentPlayer) return true;
@@ -91,10 +90,8 @@ bool checkWin() {
     if (board[0][0] == currentPlayer && board[1][1] == currentPlayer && board[2][2] == currentPlayer) return true;
     if (board[0][2] == currentPlayer && board[1][1] == currentPlayer && board[2][0] == currentPlayer) return true;
 
-
     return false;
 }
-
 
 bool checkDraw() {
     for (int i = 0; i < SIZE; i++) {
@@ -105,10 +102,9 @@ bool checkDraw() {
     return true;
 }
 
-
 void getPlayerMove(int *row, int *col) {
     while (true) {
-        printf("Player %c, enter your move (row and column): ", currentPlayer);
+        printf("%s (%c), enter your move (row and column): ", currentPlayer == 'X' ? playerXName : playerOName, currentPlayer);
         if (scanf("%d %d", row, col) != 2) {
             while (getchar() != '\n');
             printf("Invalid input. Please enter numeric values.\n");
@@ -128,7 +124,6 @@ void getPlayerMove(int *row, int *col) {
     }
 }
 
-
 void displayInstructions() {
     printf("Welcome to Tic Tac Toe!\n");
     printf("Player X and Player O take turns to place their marks on the 3x3 grid.\n");
@@ -140,42 +135,93 @@ void displayInstructions() {
     printf("'r' - Redo last undone move\n\n");
 }
 
+void displayMenu() {
+    printf("Tic Tac Toe\n");
+    printf("1. Start New Game\n");
+    printf("2. View Instructions\n");
+    printf("3. Change Player Names\n");
+    printf("4. View Win Count\n");
+    printf("5. Exit\n");
+    printf("Enter your choice: ");
+}
+
+void changePlayerNames() {
+    printf("Enter name for Player X: ");
+    scanf("%s", playerXName);
+    printf("Enter name for Player O: ");
+    scanf("%s", playerOName);
+    printf("Player names updated successfully.\n");
+}
+
+void viewWinCount() {
+    printf("Win Count:\n");
+    printf("%s (X): %d\n", playerXName, playerXWins);
+    printf("%s (O): %d\n", playerOName, playerOWins);
+}
 
 int main() {
-    int row, col;
+    int row, col, choice;
     char command;
     bool gameOver = false;
-    initializeBoard();
-    displayInstructions();
 
+    while (true) {
+        displayMenu();
+        scanf("%d", &choice);
 
-    while (!gameOver) {
-        displayBoard();
-        printf("Enter your move (or command): ");
-        scanf(" %c", &command);
-        if (command == 'u') {
-            undoMove();
-        } else if (command == 'r') {
-            redoMove();
-        } else {
-            ungetc(command, stdin);
-            getPlayerMove(&row, &col);
-            if (makeMove(row, col)) {
-                if (checkWin()) {
+        switch (choice) {
+            case 1:
+                initializeBoard();
+                gameOver = false;
+                displayInstructions();
+                while (!gameOver) {
                     displayBoard();
-                    printf("Player %c wins!\n", currentPlayer);
-                    gameOver = true;
-                } else if (checkDraw()) {
-                    displayBoard();
-                    printf("The game is a draw!\n");
-                    gameOver = true;
-                } else {
-                    switchPlayer();
+                    printf("Enter your move (or command): ");
+                    scanf(" %c", &command);
+                    if (command == 'u') {
+                        undoMove();
+                    } else if (command == 'r') {
+                        redoMove();
+                    } else {
+                        ungetc(command, stdin);
+                        getPlayerMove(&row, &col);
+                        if (makeMove(row, col)) {
+                            if (checkWin()) {
+                                displayBoard();
+                                printf("Player %s (%c) wins!\n", currentPlayer == 'X' ? playerXName : playerOName, currentPlayer);
+                                if (currentPlayer == 'X') {
+                                    playerXWins++;
+                                } else {
+                                    playerOWins++;
+                                }
+                                gameOver = true;
+                            } else if (checkDraw()) {
+                                displayBoard();
+                                printf("The game is a draw!\n");
+                                gameOver = true;
+                            } else {
+                                switchPlayer();
+                            }
+                        }
+                    }
                 }
-            }
+                break;
+            case 2:
+                displayInstructions();
+                break;
+            case 3:
+                changePlayerNames();
+                break;
+            case 4:
+                viewWinCount();
+                break;
+            case 5:
+                printf("Exiting game. Goodbye!\n");
+                return 0;
+            default:
+                printf("Invalid choice. Please try again.\n");
+                break;
         }
     }
-
 
     return 0;
 }
