@@ -109,7 +109,11 @@ bool checkDraw() {
 void getPlayerMove(int *row, int *col) {
     while (true) {
         printf("Player %c, enter your move (row and column): ", currentPlayer);
-        scanf("%d %d", row, col);
+        if (scanf("%d %d", row, col) != 2) {
+            while (getchar() != '\n');
+            printf("Invalid input. Please enter numeric values.\n");
+            continue;
+        }
         if (*row >= 1 && *row <= SIZE && *col >= 1 && *col <= SIZE) {
             (*row)--;
             (*col)--;
@@ -175,5 +179,3 @@ int main() {
 
     return 0;
 }
-
-
